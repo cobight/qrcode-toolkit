@@ -1,5 +1,5 @@
-import { dataUrlGeneratedQRCode, qrcode } from './state'
 import type { MarginObject, State } from './types'
+import { dataUrlGeneratedQRCode, qrcode } from './state'
 
 export function resolveMargin(margin: number | MarginObject) {
   return typeof margin === 'number'

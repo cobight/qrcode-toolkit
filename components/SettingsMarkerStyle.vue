@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QrCodeGeneratorMarkerState } from 'logic/types'
+import type { QrCodeGeneratorMarkerState } from '~/logic/types'
 import { MarkerInnerShapeIcons, MarkerInnerShapes, MarkerShapeIcons, MarkerShapes, PixelStyleIcons, PixelStyles } from '~/logic/types'
 
 const props = defineProps<{

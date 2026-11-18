@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { Diff, State } from '~/logic/types'
 import { debounce } from 'perfect-debounce'
+import { HightlightFactor } from '~/logic/diff'
 import { sendParentEvent } from '~/logic/messaging'
 import { hasParentWindow } from '~/logic/state'
-import { HightlightFactor } from '~/logic/diff'
-import type { Diff, State } from '~/logic/types'
 
 const props = defineProps<{
   modelValue: boolean
@@ -100,7 +100,10 @@ async function run() {
   }
   else if (state.downloadType === 'mask') {
     ctx.fillStyle = state.maskColor
-    for (const segment of [...diff.mismatchLight, ...diff.mismatchDark])
+    for (const segment of [
+      ...diff.mismatchLight,
+      ...diff.mismatchDark,
+    ])
       drawPoint(segment.x, segment.y, state.maskShape)
   }
 }
@@ -147,7 +150,7 @@ onKeyStroke('Escape', close)
       class="fixed inset-0 bg-black/20 backdrop-blur-10"
       @click="close()"
     />
-    <div class="relative z-10 max-w-full w-[35rem] rounded-lg p-6 bg-base" flex="~ col gap-4" border="~ base">
+    <div class="relative z-10 max-w-full w-[35rem] rounded-lg bg-base p-6" flex="~ col gap-4" border="~ base">
       <div border="~ base rounded-lg" relative of-hidden>
         <canvas ref="canvas" w-full />
         <div absolute inset-0 z--1 class="transparent-background" />
@@ -197,22 +200,22 @@ onKeyStroke('Escape', close)
       <div flex="~ gap-2">
         <template v-if="hasParentWindow">
           <template v-if="state.compare.downloadType === 'correction' && state.compare.downloadShowImage">
-            <button text-sm text-button @click="sendToInpaint()">
+            <button text-button text-sm @click="sendToInpaint()">
               <div i-ri-brush-line />
               Send to inpaint
             </button>
-            <button text-sm text-button @click="sendToI2I()">
+            <button text-button text-sm @click="sendToI2I()">
               <div i-ri-image-2-line />
               Send to img2img
             </button>
           </template>
         </template>
         <div flex-auto />
-        <button text-sm op75 text-button @click="close()">
+        <button text-button text-sm op75 @click="close()">
           Close
         </button>
 
-        <button text-sm text-button @click="download()">
+        <button text-button text-sm @click="download()">
           <div i-ri-download-line />
           Download
         </button>

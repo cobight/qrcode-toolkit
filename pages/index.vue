@@ -16,7 +16,7 @@ const buildTime = useTimeAgo(config.public.buildTime as any)
               transform: storeIndex === n ? 'scale(1.1)' : 'scale(0.95)',
             }"
             class="hover:op100!"
-            h-8 w-8 transition-all duration-300 icon-button @click="storeIndex = n"
+            h-8 w-8 icon-button transition-all duration-300 @click="storeIndex = n"
           >
             {{ n }}
           </button>

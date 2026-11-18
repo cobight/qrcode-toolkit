@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { MarginObject, QRCodeGeneratorState } from '~/logic/types'
 import { randomStr } from '@antfu/utils'
 import { generateQRCode } from '~/logic/generate'
 import { defaultGeneratorState } from '~/logic/state'
-import type { MarginObject, QRCodeGeneratorState } from '~/logic/types'
 import { MarkerInnerShapes, MarkerShapes, PixelStyles } from '~/logic/types'
 
 interface BatchState {
@@ -45,7 +45,9 @@ async function download() {
       markerShape: randomSelect(MarkerShapes),
       markerInnerShape: randomSelect(MarkerInnerShapes),
       maskPattern: randomRange(-1, 7),
-      effect: Math.random() > 0.5 ? 'none' : 'crystalize',
+      effect: Math.random() > 0.5
+        ? 'none'
+        : 'crystalize',
       marginNoise: Math.random() > 0.5,
       marginNoiseRate: Math.random() * 0.5 + 0.1,
     }

@@ -120,6 +120,16 @@ export interface QRCodeGeneratorState extends QrCodeGeneratorMarkerState {
   effectLiquidifyRadius: number
   effectLiquidifyThreshold: number
   backgroundImage?: string
+  /** 中心图（data URL，统一重编码为 PNG，最长边 ≤ 256px） */
+  centerIcon?: string
+  /** 图标边长占二维码内容边长的百分比，clamp 到 8–18 */
+  centerIconSize: number
+  /** 透明间隙占图标边长的百分比，clamp 到 0–10 */
+  centerIconPadding: number
+  /** 是否圆角裁剪 */
+  centerIconRounded: boolean
+  /** 是否用背景色涂满间隙方框（背景图场景下保证对比度） */
+  centerIconPlate: boolean
 
   transformPerspectiveX: number
   transformPerspectiveY: number
@@ -171,10 +181,75 @@ export interface ScannerState {
   cameraSampleDelay: number
 }
 
+export const ComposePresetIds = [
+  '9:16',
+  '4:5',
+  '3:4',
+  '1:1',
+  '16:9',
+  '4:3',
+  '2:3',
+  'custom',
+] as const
+
+export type ComposePresetId = typeof ComposePresetIds[number]
+
+export type ComposeBackgroundFit = 'cover' | 'contain' | 'stretch'
+
+/** 贴片来源：qr 来自 Generator 产物，image 来自本地导入 */
+export type ComposeStampKind = 'qr' | 'image'
+
+export interface ComposeStamp {
+  id: string
+  /** 图层名，可改名 */
+  name: string
+  kind: ComposeStampKind
+  /** 原图尺寸，用于锁定宽高比和在刷新后重建几何 */
+  naturalW: number
+  naturalH: number
+  /** 设计坐标（以 ComposeState.width/height 为单位），图片内容左上角 */
+  x: number
+  y: number
+  /** 设计坐标下的图片宽度，高度由 naturalW/naturalH 推出 */
+  w: number
+  rotation: 0 | 90 | 180 | 270
+  /**
+   * 白底板是否自动跟随图片透明度：
+   * true 时图片带透明像素就不铺白底，用户手动改过开关后置为 false。
+   */
+  plateAuto: boolean
+  /** 是否铺白色底板；关闭时保留原图透明背景（plateAuto 为 true 时此值仅作兜底） */
+  plate: boolean
+  /** 白底板外扩的静区，设计像素，仅在 plate 开启时生效 */
+  padding: number
+  radius: number
+  opacity: number
+  /** 亮度倍数：1 为原图，小于 1 压暗，大于 1 提亮 */
+  brightness: number
+}
+
+export interface ComposeState {
+  preset: ComposePresetId
+  width: number
+  height: number
+  backgroundColor: string
+  backgroundKind: 'color' | 'image'
+  backgroundFit: ComposeBackgroundFit
+  /** 底图压暗，保证二维码对比度 */
+  dim: number
+  /** 数组顺序即图层顺序，越靠后越在上层 */
+  stamps: ComposeStamp[]
+  selectedId?: string
+  snap: boolean
+  exportScale: number
+  exportFormat: 'png' | 'jpeg'
+}
+
 export interface State {
   qrcode: QRCodeGeneratorState
   compare: ComparionState
   scanner: ScannerState
+  compose: ComposeState
   uploaded: UploadState
 }
 

@@ -1,14 +1,14 @@
+import { FileSystemIconLoader } from '@iconify/utils/lib/loader/node-loaders'
 import {
   defineConfig,
   presetAttributify,
   presetIcons,
   presetTypography,
-  presetUno,
   presetWebFonts,
+  presetWind3,
   transformerDirectives,
   transformerVariantGroup,
 } from 'unocss'
-import { FileSystemIconLoader } from '@iconify/utils/lib/loader/node-loaders'
 
 export default defineConfig({
   shortcuts: [
@@ -24,7 +24,7 @@ export default defineConfig({
     },
   ],
   presets: [
-    presetUno(),
+    presetWind3(),
     presetAttributify(),
     presetIcons({
       scale: 1.2,

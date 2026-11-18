@@ -14,7 +14,7 @@ const value = defineModel<string | number>('modelValue', {
   <fieldset flex="~ inline wrap" border="~ base rounded" of-hidden text-xs>
     <label
       v-for="i, idx of options" :key="i"
-      border="b base" relative mb--1px hover:bg-secondary px-2 py-1
+      border="b base" relative mb--1px px-2 py-1 hover:bg-secondary
       :class="[
         idx ? 'border-l border-base ml--1px' : '',
         i === value ? 'bg-active' : '',

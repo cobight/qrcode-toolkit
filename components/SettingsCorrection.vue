@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ComparionState } from 'logic/types'
+import type { ComparionState } from '~/logic/types'
 
 defineProps<{
   state: ComparionState

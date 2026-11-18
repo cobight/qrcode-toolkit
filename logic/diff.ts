@@ -1,5 +1,5 @@
-import { getAverageColor, rgbaToHex } from './image'
 import type { ComparionState, Diff, Segment } from './types'
+import { getAverageColor, rgbaToHex } from './image'
 import { resolveMargin } from './utils'
 
 export const HightlightFactor = 1.8
@@ -16,16 +16,7 @@ export async function segmentImage(dataurl: string, gridSize = 16) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
   const shortSide = Math.min(img.width, img.height)
-  ctx.drawImage(img,
-    (img.width - shortSide) / 2,
-    (img.height - shortSide) / 2,
-    shortSide,
-    shortSide,
-    0,
-    0,
-    canvasSize,
-    canvasSize,
-  )
+  ctx.drawImage(img, (img.width - shortSide) / 2, (img.height - shortSide) / 2, shortSide, shortSide, 0, 0, canvasSize, canvasSize)
 
   const cellSize = canvasSize / gridSize
   const cells: Segment[] = []
@@ -46,7 +37,9 @@ export async function segmentImage(dataurl: string, gridSize = 16) {
       dataUrl: '',
       luminance,
       expected: 0,
-      value: luminance >= 128 ? 1 : 0,
+      value: luminance >= 128
+        ? 1
+        : 0,
       isMargin: false,
     }))
   }
@@ -84,7 +77,9 @@ export function compareSegments(segments: Segment[], qrcodeSegments: Segment[], 
     const dis = Math.abs(dislight - disdark)
     i.value = dis < diffThreshold
       ? -1
-      : dislight < disdark ? 1 : 0
+      : dislight < disdark
+        ? 1
+        : 0
   })
 
   const mismatchDark = mainSegments

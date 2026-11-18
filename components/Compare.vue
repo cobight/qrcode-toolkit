@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { debounce } from 'perfect-debounce'
-import { sendQRCodeToCompare } from '~/logic/utils'
 import type { Segment, State } from '~/logic/types'
-import { HightlightFactor, compareSegments, segmentImage } from '~/logic/diff'
+import { debounce } from 'perfect-debounce'
+import { compareSegments, HightlightFactor, segmentImage } from '~/logic/diff'
 import { defaultCompareState, showDownloadDialog, showGridHelper } from '~/logic/state'
+import { sendQRCodeToCompare } from '~/logic/utils'
 import { view } from '~/logic/view'
 
 const props = defineProps<{
@@ -36,18 +36,18 @@ const qrcodeSegments = shallowRef<Segment[]>()
 const debouncedImageSeg = debounce(async () => {
   imageSegments.value = dataurl.value
     ? await segmentImage(
-      dataurl.value,
-      gridSize.value,
-    )
+        dataurl.value,
+        gridSize.value,
+      )
     : undefined
 }, 800)
 
 const debouncedQRCodeSeg = debounce(async () => {
   qrcodeSegments.value = dataUrlQRCode.value
     ? await segmentImage(
-      dataUrlQRCode.value,
-      gridSize.value,
-    )
+        dataUrlQRCode.value,
+        gridSize.value,
+      )
     : undefined
 }, 800)
 
@@ -104,9 +104,9 @@ const { isOverDropZone } = useDropZone(document.body, {
       return
 
     const chain = Array.from(document.elementsFromPoint(event.clientX, event.clientY))
-    if (chain.find(el => el.id === 'upload-zone-image'))
+    if (chain.some(el => el.id === 'upload-zone-image'))
       uploadTarget.value = 'image'
-    else if (chain.find(el => el.id === 'upload-zone-qrcode'))
+    else if (chain.some(el => el.id === 'upload-zone-qrcode'))
       uploadTarget.value = 'qrcode'
     else
       uploadTarget.value = undefined
@@ -301,7 +301,7 @@ function toggleHighContrast() {
           <div flex-auto />
           <button
             v-if="dataUrlQRCode"
-            text-xs text-button
+            text-button text-xs
             @click="showGridHelper = true"
           >
             <div i-ri-artboard-2-line />
@@ -343,7 +343,7 @@ function toggleHighContrast() {
 
       <div v-if="dataurl">
         <button
-          text-sm op75 text-button hover:text-red hover:op100
+          text-button text-sm op75 hover:text-red hover:op100
           @click="reset()"
         >
           Reset State
@@ -368,7 +368,7 @@ function toggleHighContrast() {
             @update:model-value="e => showGridHelper = e ? true : false"
           />
           <button
-            text-sm op75 text-button
+            text-button text-sm op75
             @click="sendQRCodeToCompare(fullState)"
           >
             <div i-ri-qr-code-line />
@@ -457,7 +457,7 @@ function toggleHighContrast() {
 
           <div flex="~ gap-2 wrap">
             <button
-              text-sm text-button
+              text-button text-sm
               @pointerenter="highlightMismatch = true; highlightMismatchBorder = false"
               @pointerleave="highlightMismatch = false"
             >
@@ -465,7 +465,7 @@ function toggleHighContrast() {
               Preview Correction
             </button>
             <button
-              text-sm text-button
+              text-button text-sm
               @pointerenter="highlightMismatch = true; highlightMismatchBorder = true"
               @pointerleave="highlightMismatch = false"
             >
@@ -473,7 +473,7 @@ function toggleHighContrast() {
               Highlight Mistmatch
             </button>
             <button
-              text-sm text-button
+              text-button text-sm
               @click="showDownloadDialog = true"
             >
               <div i-ri-download-line />

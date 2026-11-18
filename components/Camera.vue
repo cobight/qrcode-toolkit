@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ScanResult } from 'qr-scanner-wechat'
-import { scan } from 'qr-scanner-wechat'
 import type { State } from '~/logic/types'
+import { scan } from 'qr-scanner-wechat'
 
 const props = defineProps<{
   state: State

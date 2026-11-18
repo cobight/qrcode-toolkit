@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { State } from '~/logic/types'
 import { deepMerge } from '@antfu/utils'
 import { sendParentEvent } from '~/logic/messaging'
 import { dataUrlScannerUpload, defaultState, hasParentWindow, isLargeScreen, showGridHelper, storeIndex } from '~/logic/state'
 import { view } from '~/logic/view'
-import type { State } from '~/logic/types'
 
 defineProps<{
   index: number
@@ -73,6 +73,14 @@ onMounted(() => {
     </button>
     <button
       flex="~ gap-1.5 items-center" text-button
+      :class="view === 'compose' ? 'bg-secondary' : 'op50'"
+      @click="view = 'compose'"
+    >
+      <div i-ri-image-edit-line />
+      Compose
+    </button>
+    <button
+      flex="~ gap-1.5 items-center" text-button
       :class="view === 'compare' ? 'bg-secondary' : 'op50'"
       @click="view = 'compare'"
     >
@@ -100,7 +108,7 @@ onMounted(() => {
       <a href="https://antfu.me" target="_blank" op75 hover:underline hover:op100>Anthony Fu</a><span op50>'s QR Toolkit</span>
     </div>
     <button
-      flex="~ gap-1.5 items-center" ml2 text-sm text-button
+      flex="~ gap-1.5 items-center" ml2 text-button text-sm
       :class="view === 'credit' ? 'bg-secondary' : 'op50'"
       @click="view = 'credit'"
     >
@@ -110,6 +118,9 @@ onMounted(() => {
 
   <div v-show="view === 'generator'" w-full>
     <Generator :state="state" />
+  </div>
+  <div v-show="view === 'compose'" w-full>
+    <Compose :state="state" />
   </div>
   <div v-show="view === 'compare'" w-full>
     <div v-if="!isLargeScreen" flex px20 py50 text-center op50>

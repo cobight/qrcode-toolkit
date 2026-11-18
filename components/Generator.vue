@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { debounce } from 'perfect-debounce'
-import { sendParentEvent } from '~/logic/messaging'
-import { generateQRCode } from '~/logic/generate'
-import { dataUrlGeneratedQRCode, defaultGeneratorState, generateQRCodeInfo, hasParentWindow, isLargeScreen, qrcode } from '~/logic/state'
-import { view } from '~/logic/view'
 import type { State } from '~/logic/types'
+import { debounce } from 'perfect-debounce'
+import { generateQRCode } from '~/logic/generate'
+import { CenterIconLimits, prepareCenterIcon } from '~/logic/icon'
+import { sendParentEvent } from '~/logic/messaging'
+import { dataUrlGeneratedQRCode, dataUrlGeneratedQRCodeForCompose, defaultGeneratorState, generateQRCodeInfo, hasParentWindow, isLargeScreen, qrcode } from '~/logic/state'
+import { generateQRCodeSVG } from '~/logic/svg'
 import { MarkerSubShapeIcons, MarkerSubShapes, PixelStyleIcons, PixelStyles } from '~/logic/types'
 import { getAspectRatio, sendQRCodeToCompare } from '~/logic/utils'
+import { view } from '~/logic/view'
 
 const props = defineProps<{
   state: State
@@ -20,20 +22,82 @@ const floating = computed(() => rightPanelRect.top < 10 && isLargeScreen.value)
 
 const canvas = ref<HTMLCanvasElement>()
 
+// Local to the generator: the compare and controlnet integrations always need
+// a flattened image, so this only affects the preview and the exported files.
+const transparentBackground = ref(false)
+
+const checkerboardStyle = {
+  backgroundImage: 'linear-gradient(45deg, rgba(127, 127, 127, 0.25) 25%, transparent 25%, transparent 75%, rgba(127, 127, 127, 0.25) 75%), linear-gradient(45deg, rgba(127, 127, 127, 0.25) 25%, transparent 25%, transparent 75%, rgba(127, 127, 127, 0.25) 75%)',
+  backgroundPosition: '0 0, 8px 8px',
+  backgroundSize: '16px 16px',
+}
+
+function fileName(extension: string) {
+  const transparent = transparentBackground.value ? '-transparent' : ''
+  return `${state.value.text.replace(/\W/g, '_')}[${state.value.ecc}_x${state.value.scale}]${transparent}.${extension}`
+}
+
+function triggerDownload(url: string, name: string) {
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  a.click()
+}
+
 async function run() {
   if (!canvas.value)
     return
-  await generateQRCode(canvas.value, state.value)
-  dataUrlGeneratedQRCode.value = canvas.value.toDataURL()
+
+  await generateQRCode(canvas.value, state.value, { transparent: transparentBackground.value })
+  dataUrlGeneratedQRCodeForCompose.value = canvas.value.toDataURL()
+
+  if (transparentBackground.value) {
+    const flattened = document.createElement('canvas')
+    await generateQRCode(flattened, state.value)
+    dataUrlGeneratedQRCode.value = flattened.toDataURL()
+  }
+  else {
+    dataUrlGeneratedQRCode.value = canvas.value.toDataURL()
+  }
 }
 
-function download() {
-  if (!canvas.value)
+async function onCenterIconChange(dataurl?: string) {
+  if (!dataurl) {
+    state.value.centerIcon = undefined
     return
-  const a = document.createElement('a')
-  a.href = dataUrlGeneratedQRCode.value!
-  a.download = `${state.value.text.replace(/\W/g, '_')}[${state.value.ecc}_x${state.value.scale}].png`
-  a.click()
+  }
+  try {
+    state.value.centerIcon = await prepareCenterIcon(dataurl, CenterIconLimits.maxStoredPixels)
+    if (state.value.ecc !== 'H')
+      state.value.ecc = 'H'
+  }
+  catch {
+    // eslint-disable-next-line no-alert
+    alert('This image can not be used as a center icon.')
+  }
+}
+
+async function downloadPNG() {
+  const target = document.createElement('canvas')
+  await generateQRCode(target, state.value, { transparent: transparentBackground.value })
+  triggerDownload(target.toDataURL('image/png'), fileName('png'))
+}
+
+const downloadingSVG = ref(false)
+
+async function downloadSVG() {
+  if (downloadingSVG.value)
+    return
+  downloadingSVG.value = true
+  try {
+    const svg = await generateQRCodeSVG(state.value, { transparent: transparentBackground.value })
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
+    triggerDownload(url, fileName('svg'))
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+  finally {
+    downloadingSVG.value = false
+  }
 }
 
 function reset() {
@@ -81,7 +145,7 @@ async function readState(e: Event) {
       }
     }
   }
-  catch (e) {
+  catch {
     // eslint-disable-next-line no-alert
     alert('Invalid JSON file')
   }
@@ -100,8 +164,9 @@ const mayNotScannable = computed(() => {
       (state.value.effectLiquidifyRadius / state.value.scale > 0.4)
       || (Math.abs(state.value.effectLiquidifyThreshold - 128) > 32)
     )
-  )
+  ) {
     return true
+  }
   if (state.value.markerShape === 'tiny-plus')
     return true
   if (!['square', 'circle', 'box'].includes(state.value.markerSub))
@@ -110,6 +175,9 @@ const mayNotScannable = computed(() => {
     return true
   if (state.value.transformScale > 1.05)
     return true
+  if (state.value.centerIcon && state.value.ecc !== 'H')
+    return true
+  return false
 })
 
 const hasNonCenteredMargin = computed(() => {
@@ -180,7 +248,7 @@ const { isOverDropZone } = useDropZone(document.body, {
       return
 
     const chain = Array.from(document.elementsFromPoint(event.clientX, event.clientY))
-    if (chain.find(el => el.id === 'upload-zone-qrcode'))
+    if (chain.some(el => el.id === 'upload-zone-qrcode'))
       uploadTarget.value = 'qrcode'
     else
       uploadTarget.value = undefined
@@ -192,6 +260,8 @@ watch(
   () => debouncedRun(),
   { deep: true, immediate: true },
 )
+
+watch(transparentBackground, () => debouncedRun())
 </script>
 
 <template>
@@ -316,7 +386,7 @@ watch(
             bg-secondary py0.5 pl2 text-sm
           >
           <button
-            p1 icon-button-sm
+            icon-button-sm p1
             title="Randomize"
             @click="state.seed = Math.round(Math.random() * 100000)"
           >
@@ -325,7 +395,7 @@ watch(
         </OptionItem>
         <OptionItem title="Background" div>
           <OptionColor v-if="state.backgroundImage?.startsWith('#')" v-model="state.backgroundImage" />
-          <button v-else relative text-xs text-button>
+          <button v-else relative text-button text-xs>
             <img
               v-if="state.backgroundImage" :src="state.backgroundImage"
               absolute inset-0 z-0 h-full w-full rounded object-cover op50
@@ -344,6 +414,53 @@ watch(
             <div i-ri-paint-fill @click="state.backgroundImage = '#888888'" />
           </button>
         </OptionItem>
+
+        <OptionItem title="Center Icon" div>
+          <button relative text-button text-xs>
+            <img
+              v-if="state.centerIcon" :src="state.centerIcon"
+              absolute inset-0 z-0 h-full w-full rounded object-contain op50
+            >
+            <div i-ri-image-add-line z-1 />
+            <div z-1>
+              {{ state.centerIcon ? 'Replace' : 'Upload' }}
+            </div>
+            <ImageUpload
+              :model-value="state.centerIcon"
+              @update:model-value="onCenterIconChange"
+            />
+          </button>
+          <button v-if="state.centerIcon" icon-button-sm title="Clear">
+            <div i-carbon-close @click="state.centerIcon = undefined" />
+          </button>
+        </OptionItem>
+
+        <template v-if="state.centerIcon">
+          <OptionItem title="Icon Size" nested description="Icon edge, in percent of the QR code edge">
+            <OptionSlider
+              v-model="state.centerIconSize"
+              :min="CenterIconLimits.minSize"
+              :max="CenterIconLimits.maxSize"
+              :step="1"
+              unit="%"
+            />
+          </OptionItem>
+          <OptionItem title="Gap" nested description="Transparent gap around the icon, in percent of the icon edge">
+            <OptionSlider
+              v-model="state.centerIconPadding"
+              :min="CenterIconLimits.minPadding"
+              :max="CenterIconLimits.maxPadding"
+              :step="1"
+              unit="%"
+            />
+          </OptionItem>
+          <OptionItem title="Rounded Icon" nested>
+            <OptionCheckbox v-model="state.centerIconRounded" />
+          </OptionItem>
+          <OptionItem title="Plate" nested description="Fill the gap with the background color, so a background image does not show through">
+            <OptionCheckbox v-model="state.centerIconPlate" />
+          </OptionItem>
+        </template>
 
         <div border="t base" my1 />
 
@@ -422,7 +539,7 @@ watch(
       </div>
       <div flex="~ gap-2">
         <button
-          text-sm op75 text-button hover:op100
+          text-button text-sm op75 hover:op100
           @click="downloadState()"
         >
           <div i-ri-download-2-line />
@@ -430,7 +547,7 @@ watch(
         </button>
         <button
 
-          relative text-sm op75 text-button hover:op100
+          relative text-button text-sm op75 hover:op100
         >
           <div i-ri-upload-2-line />
           Load state
@@ -443,7 +560,7 @@ watch(
         </button>
         <div flex-auto />
         <button
-          text-sm op75 text-button hover:text-red hover:op100
+          text-button text-sm op75 hover:text-red hover:op100
           @click="reset()"
         >
           <div i-ri-delete-bin-6-line />
@@ -461,7 +578,11 @@ watch(
           width: `${rightPanelRect.width}px`,
         } : {}"
       >
-        <canvas ref="canvas" w-full width="1000" height="1000" border="~ base rounded" />
+        <canvas
+          ref="canvas" w-full width="1000" height="1000"
+          border="~ base rounded"
+          :style="transparentBackground ? checkerboardStyle : {}"
+        />
 
         <div v-if="qrcode" border="~ base rounded" p3 pl6 pr0 flex="~ col gap-2">
           <div grid="~ gap-1 cols-6 items-center">
@@ -499,15 +620,43 @@ watch(
             </div>
           </div>
         </div>
+        <div border="~ base rounded" p3 flex="~ col gap-2">
+          <div flex="~ items-center justify-between gap-2">
+            <div text-sm op50>
+              Download
+            </div>
+            <label
+              flex="~ items-center gap-2 text-sm cursor-pointer select-none"
+              title="Export the QR code without a background, using an alpha channel instead"
+            >
+              <input v-model="transparentBackground" type="checkbox" h-4 w-4 cursor-pointer accent-current>
+              Transparent
+            </label>
+          </div>
+          <div flex="~ gap-2">
+            <button text-button flex-1 py2 text-sm @click="downloadPNG()">
+              <div i-ri-file-image-line />
+              PNG
+            </button>
+            <button
+              text-button flex-1 py2 text-sm
+              :class="downloadingSVG ? 'op40 pointer-events-none' : ''"
+              @click="downloadSVG()"
+            >
+              <div i-ri-file-code-line />
+              SVG
+            </button>
+          </div>
+          <button text-button py2 text-sm @click="view = 'compose'">
+            <div i-ri-image-edit-line />
+            Place on Canvas
+          </button>
+          <div v-if="transparentBackground" text-xs op50>
+            Alpha channel only — the compare and controlnet tabs still receive a flattened image.
+          </div>
+        </div>
         <button
-          py2 text-sm text-button
-          @click="download()"
-        >
-          <div i-ri-download-line />
-          Download
-        </button>
-        <button
-          py2 text-sm text-button
+          text-button py2 text-sm
           @click="sendCompare()"
         >
           <div i-ri-send-backward />
@@ -515,7 +664,7 @@ watch(
         </button>
         <button
           v-if="hasParentWindow"
-          py2 text-sm text-button
+          text-button py2 text-sm
           @click="sendToWebUI()"
         >
           <div i-ri-file-upload-line />
@@ -532,6 +681,18 @@ watch(
         </div>
         <div v-if="state.renderPointsType !== 'all'" border="~ indigo/60 rounded" bg-indigo-5:10 px3 py2 text-sm text-indigo>
           This is a partial QR Code. It does <b>not</b> contain all the necessary data to be scannable.
+        </div>
+        <div v-if="state.centerIcon && state.ecc !== 'H'" border="~ yellow-6/60 rounded" bg-yellow-5:10 px3 py2 text-sm text-yellow-6>
+          The <b>center icon</b> covers data modules. Use <b>H</b> error correction and verify before printing.
+        </div>
+        <div v-if="state.centerIcon && qrcode && qrcode.version < 3" border="~ yellow-6/60 rounded" bg-yellow-5:10 px3 py2 text-sm text-yellow-6>
+          This QR Code is too small (version {{ qrcode.version }}) for a center icon.
+        </div>
+        <div v-if="state.centerIcon && (state.transformPerspectiveX !== 0 || state.transformPerspectiveY !== 0)" border="~ yellow-6/60 rounded" bg-yellow-5:10 px3 py2 text-sm text-yellow-6>
+          The center icon is <b>not</b> warped by the perspective transform.
+        </div>
+        <div v-if="state.centerIcon" border="~ yellow-6/60 rounded" bg-yellow-5:10 px3 py2 text-sm text-yellow-6>
+          The <b>compare tab</b> does not know about the center icon; its area will be reported as mismatched.
         </div>
       </div>
 

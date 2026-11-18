@@ -19,7 +19,9 @@ export function crystalize(imageData: ImageData, radius: number, seed: number) {
   const points: FlatPoint[] = []
   for (let xi = 0; xi < xCount; xi++) {
     for (let yi = 0; yi < yCount; yi++) {
-      let x = xi * radius + (yi % 2 ? radius / 2 : 0)
+      let x = xi * radius + (yi % 2
+        ? radius / 2
+        : 0)
       let y = yi * triangleHeight
       x += (rng() - 0.5) * radius * DISTORSION
       y += (rng() - 0.5) * triangleHeight * DISTORSION

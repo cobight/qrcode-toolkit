@@ -16,7 +16,9 @@ export function liquidify(
 
   for (let i = 0; i < blurredData.length; i += 4) {
     const avarageLuminance = (blurredData[i] + blurredData[i + 1] + blurredData[i + 2]) / 3
-    const color = avarageLuminance > threshold ? lightRgb : darkRgb
+    const color = avarageLuminance > threshold
+      ? lightRgb
+      : darkRgb
     blurredData[i] = color[0]
     blurredData[i + 1] = color[1]
     blurredData[i + 2] = color[2]

@@ -1,4 +1,7 @@
 export default defineNuxtConfig({
+  // Keep the Nuxt 3-style root layout (app.vue, pages/, components/ at root) instead of src/app/
+  srcDir: '.',
+
   modules: [
     '@vueuse/nuxt',
     '@unocss/nuxt',
@@ -10,9 +13,7 @@ export default defineNuxtConfig({
 
   experimental: {
     payloadExtraction: false,
-    inlineSSRStyles: false,
     renderJsonPayloads: true,
-    typedPages: true,
   },
 
   nitro: {
@@ -26,11 +27,6 @@ export default defineNuxtConfig({
   spaLoadingTemplate: false,
 
   vite: {
-    vue: {
-      script: {
-        defineModel: true,
-      },
-    },
     server: {
       cors: true,
     },
@@ -44,10 +40,16 @@ export default defineNuxtConfig({
     '@unocss/reset/tailwind.css',
   ],
 
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        // Nuxt 4 turns this on by default; the codebase was written under Nuxt 3 rules.
+        noUncheckedIndexedAccess: false,
+      },
+    },
+  },
+
   devtools: {
     enabled: true,
-    experimental: {
-      timeline: true,
-    },
   },
 })

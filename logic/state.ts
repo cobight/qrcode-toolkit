@@ -1,8 +1,8 @@
-import { breakpointsTailwind } from '@vueuse/core'
 import type { QrCodeGenerateResult } from 'uqr'
-import type { ComparionState, GeneratedQRInfo, QRCodeGeneratorState, ScannerState, State } from './types'
+import type { ComparionState, ComposeState, GeneratedQRInfo, QRCodeGeneratorState, ScannerState, State } from './types'
+import { breakpointsTailwind } from '@vueuse/core'
 
-export const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+export const isSafari = /^(?:(?!chrome|android).)*safari/i.test(navigator.userAgent)
 export const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
 export const storeIndex = useLocalStorage('qrd-state-index', 1, { listenToStorageChanges: false })
@@ -12,6 +12,7 @@ export const hasParentWindow = ref<boolean>(false)
 
 export const qrcode = shallowRef<QrCodeGenerateResult>()
 export const dataUrlGeneratedQRCode = ref<string>()
+export const dataUrlGeneratedQRCodeForCompose = ref<string>()
 export const dataUrlScannerUpload = ref<string>()
 export const dataUrlGeneratedSize = ref<number>(25)
 export const generateQRCodeInfo = ref<GeneratedQRInfo>()
@@ -47,6 +48,13 @@ export function defaultGeneratorState(): QRCodeGeneratorState {
     seed: Math.round(Math.random() * 1000000),
     marginNoiseSpace: 'marker',
     renderPointsType: 'all',
+
+    // 必须显式写出 undefined：reset() 用 Object.assign 覆盖，不写这个键就清不掉图标
+    centerIcon: undefined,
+    centerIconSize: 16,
+    centerIconPadding: 8,
+    centerIconRounded: true,
+    centerIconPlate: true,
 
     effect: 'none',
     effectTiming: 'after',
@@ -103,11 +111,29 @@ export function defaultScannerState(): ScannerState {
   }
 }
 
+export function defaultComposeState(): ComposeState {
+  return {
+    preset: '9:16',
+    width: 1080,
+    height: 1920,
+    backgroundColor: '#ffffff',
+    backgroundKind: 'color',
+    backgroundFit: 'cover',
+    dim: 0,
+    stamps: [],
+    selectedId: undefined,
+    snap: true,
+    exportScale: 1,
+    exportFormat: 'png',
+  }
+}
+
 export function defaultState(): State {
   return {
     qrcode: defaultGeneratorState(),
     compare: defaultCompareState(),
     scanner: defaultScannerState(),
+    compose: defaultComposeState(),
     uploaded: {
       image: undefined,
       qrcode: undefined,

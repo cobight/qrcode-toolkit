@@ -1,12 +1,12 @@
 <!-- eslint-disable no-console -->
 <script setup lang="ts">
-import { debounce } from 'perfect-debounce'
 import type { ScanResult } from 'qr-scanner-wechat'
-import { ready, scan } from 'qr-scanner-wechat'
+import type { State } from '~/logic/types'
 import { shuffle } from '@antfu/utils'
+import { debounce } from 'perfect-debounce'
+import { ready, scan } from 'qr-scanner-wechat'
 import { dataUrlScannerUpload, defaultScannerState } from '~/logic/state'
 import { view } from '~/logic/view'
-import type { State } from '~/logic/types'
 
 const props = defineProps<{
   state: State
@@ -225,7 +225,12 @@ async function narrowDown() {
   let steps = [
     ['contrast', 100, 20, Math.round] as const,
     ['brightness', 100, 20, Math.round] as const,
-    ['blur', 0, 0.1, (x: number) => Math.round(x * 10) / 10] as const,
+    [
+      'blur',
+      0,
+      0.1,
+      (x: number) => Math.round(x * 10) / 10,
+    ] as const,
   ]
 
   steps.push(...steps)
@@ -251,7 +256,9 @@ async function narrowDown() {
       let changed = false
 
       const delta = state.value[key] - targetValue
-      const sign = delta > 0 ? 1 : -1
+      const sign = delta > 0
+        ? 1
+        : -1
       const move = Math.min(Math.abs(delta), incremental) * sign
       console.log('Narrow down', key, `Move:${move}`, `Distance:${delta}`)
       if (move !== 0) {
@@ -411,7 +418,7 @@ const { isOverDropZone } = useDropZone(document.body, {
           {{ result?.text }}
         </div>
         <div flex-auto />
-        <button my--2 border-0 text-sm icon-button @click="copy(result?.text)">
+        <button my--2 border-0 icon-button text-sm @click="copy(result?.text)">
           <div :class="copied ? 'i-ri-check-line' : 'i-ri-clipboard-line'" />
         </button>
       </template>
@@ -422,7 +429,7 @@ const { isOverDropZone } = useDropZone(document.body, {
 
     <DefineLock v-slot="{ name }">
       <button
-        flex-none text-xs icon-button
+        flex-none icon-button text-xs
         title="Lock from randomize"
         :class="state.locks.includes(name) ? 'op75 text-yellow' : 'op40'"
         @click="toggleLock(name)"
@@ -461,14 +468,14 @@ const { isOverDropZone } = useDropZone(document.body, {
 
       <div flex="~ gap-2 items-center wrap">
         <button
-          text-sm op75 text-button hover:op100
+          text-button text-sm op75 hover:op100
           @click="random()"
         >
           <div i-ri-refresh-line />
           Randomize State
         </button>
         <button
-          text-sm op75 text-button hover:text-yellow hover:op100
+          text-button text-sm op75 hover:text-yellow hover:op100
           :disabled="controlling"
           :class="controlling ? 'op50 pointer-events-none' : ''"
           @click="randomTries()"
@@ -478,7 +485,7 @@ const { isOverDropZone } = useDropZone(document.body, {
         </button>
         <button
           v-if="result?.text"
-          text-sm op75 text-button hover:text-yellow hover:op100
+          text-button text-sm op75 hover:text-yellow hover:op100
           :disabled="controlling"
           :class="controlling ? 'op50 pointer-events-none' : ''"
           @click="narrowDown()"
@@ -491,14 +498,14 @@ const { isOverDropZone } = useDropZone(document.body, {
         </div>
         <div flex-auto />
         <button
-          text-sm op75 text-button hover:text-red hover:op100
+          text-button text-sm op75 hover:text-red hover:op100
           @click="reset()"
         >
           <div i-ri-pencil-ruler-2-line />
           Default
         </button>
         <button
-          text-sm op75 text-button hover:text-orange hover:op100
+          text-button text-sm op75 hover:text-orange hover:op100
           @click="emptyState()"
         >
           <div i-ri-blur-off-line />

@@ -38,7 +38,7 @@ function apply() {
       class="fixed inset-0 bg-black/20 backdrop-blur-10"
       @click="apply()"
     />
-    <div class="relative z-10 max-w-full w-[35rem] rounded-lg p-4 bg-base" flex="~ col gap-4" border="~ base">
+    <div class="relative z-10 max-w-full w-[35rem] rounded-lg bg-base p-4" flex="~ col gap-4" border="~ base">
       <h1 text-xl>
         Align Grid
       </h1>
@@ -74,10 +74,10 @@ function apply() {
       </div>
 
       <div flex="~ gap-2 justify-end" mt-5>
-        <button px5 op75 text-button @click="cancel()">
+        <button text-button px5 op75 @click="cancel()">
           Cancel
         </button>
-        <button w-25 px5 text-button @click="apply()">
+        <button w-25 text-button px5 @click="apply()">
           Apply
         </button>
       </div>
